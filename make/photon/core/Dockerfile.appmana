@@ -1,0 +1,9 @@
+FROM golang:1.26.4 AS build
+WORKDIR /harbor
+COPY . .
+WORKDIR /harbor/src
+RUN go run github.com/go-swagger/go-swagger/cmd/swagger@v0.33.1 generate server --template-dir=../tools/swagger/templates --exclude-main --additional-initialism=CVE --additional-initialism=GC --additional-initialism=OIDC -f ../api/v2.0/swagger.yaml -A harbor --target server/v2.0
+ARG GIT_COMMIT=unknown
+RUN CGO_ENABLED=0 go build -trimpath -ldflags "-w -s -X github.com/goharbor/harbor/src/lib/version.GitCommit=${GIT_COMMIT} -X github.com/goharbor/harbor/src/lib/version.ReleaseVersion=v2.15.2-appmana.1" -o /harbor_core ./core
+FROM goharbor/harbor-core:v2.15.2
+COPY --from=build --chown=10000:10000 --chmod=0755 /harbor_core /harbor/harbor_core
