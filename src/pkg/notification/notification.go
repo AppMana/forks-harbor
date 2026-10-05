@@ -82,6 +82,7 @@ func initSupportedNotifyType() {
 	supportedNotifyTypes = make([]NotifyType, 0)
 
 	eventTypes := []string{
+		event.TopicProjectVisibilityChanged,
 		event.TopicPushArtifact,
 		event.TopicPullArtifact,
 		event.TopicDeleteArtifact,

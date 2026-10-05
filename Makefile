@@ -635,3 +635,8 @@ clean:
 	@echo "  make cleanpackage:		remove online and offline install package"
 
 all: install
+
+.PHONY: test_project_visibility
+# Uses the same pinned API generator as core builds.
+test_project_visibility: gen_apis
+	cd src && go test -race ./controller/event/metadata ./pkg/notifier/formats ./controller/event/handler/webhook/project ./server/middleware/notification ./server/v2.0/handler

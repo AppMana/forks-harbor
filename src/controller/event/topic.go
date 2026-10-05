@@ -31,17 +31,18 @@ import (
 
 // const definition
 const (
-	TopicCreateProject     = "CREATE_PROJECT"
-	TopicDeleteProject     = "DELETE_PROJECT"
-	TopicPushArtifact      = "PUSH_ARTIFACT"
-	TopicPullArtifact      = "PULL_ARTIFACT"
-	TopicDeleteArtifact    = "DELETE_ARTIFACT"
-	TopicDeleteRepository  = "DELETE_REPOSITORY"
-	TopicCreateTag         = "CREATE_TAG"
-	TopicDeleteTag         = "DELETE_TAG"
-	TopicScanningFailed    = "SCANNING_FAILED"
-	TopicScanningStopped   = "SCANNING_STOPPED"
-	TopicScanningCompleted = "SCANNING_COMPLETED"
+	TopicCreateProject            = "CREATE_PROJECT"
+	TopicProjectVisibilityChanged = "PROJECT_VISIBILITY_CHANGED"
+	TopicDeleteProject            = "DELETE_PROJECT"
+	TopicPushArtifact             = "PUSH_ARTIFACT"
+	TopicPullArtifact             = "PULL_ARTIFACT"
+	TopicDeleteArtifact           = "DELETE_ARTIFACT"
+	TopicDeleteRepository         = "DELETE_REPOSITORY"
+	TopicCreateTag                = "CREATE_TAG"
+	TopicDeleteTag                = "DELETE_TAG"
+	TopicScanningFailed           = "SCANNING_FAILED"
+	TopicScanningStopped          = "SCANNING_STOPPED"
+	TopicScanningCompleted        = "SCANNING_COMPLETED"
 	// QuotaExceedTopic is topic for quota warning event, the usage reaches the warning bar of limitation, like 85%
 	TopicQuotaWarning      = "QUOTA_WARNING"
 	TopicQuotaExceed       = "QUOTA_EXCEED"
@@ -450,4 +451,14 @@ func (c *DeleteRobotEvent) ResolveToAuditLog() (*model.AuditLogExt, error) {
 func (c *DeleteRobotEvent) String() string {
 	return fmt.Sprintf("Name-%s Operator-%s OccurAt-%s",
 		c.Robot.Name, c.Operator, c.OccurAt.Format("2006-01-02 15:04:05"))
+}
+
+// ProjectVisibilityChangedEvent is emitted only after the API transaction commits.
+type ProjectVisibilityChangedEvent struct {
+	ProjectID int64
+	Project   string
+	Operator  string
+	OldPublic bool
+	NewPublic bool
+	OccurAt   time.Time
 }

@@ -38,12 +38,13 @@ type Payload struct {
 
 // EventData of notification event payload
 type EventData struct {
-	Resources   []*Resource        `json:"resources,omitempty"`
-	Repository  *Repository        `json:"repository,omitempty"`
-	Replication *model.Replication `json:"replication,omitempty"`
-	Retention   *model.Retention   `json:"retention,omitempty"`
-	Scan        *model.Scan        `json:"scan,omitempty"`
-	Custom      map[string]string  `json:"custom_attributes,omitempty"`
+	ProjectVisibility *ProjectVisibilityChange `json:"project_visibility,omitempty"`
+	Resources         []*Resource              `json:"resources,omitempty"`
+	Repository        *Repository              `json:"repository,omitempty"`
+	Replication       *model.Replication       `json:"replication,omitempty"`
+	Retention         *model.Retention         `json:"retention,omitempty"`
+	Scan              *model.Scan              `json:"scan,omitempty"`
+	Custom            map[string]string        `json:"custom_attributes,omitempty"`
 }
 
 // Resource describe infos of resource triggered notification
@@ -62,4 +63,12 @@ type Repository struct {
 	Namespace    string `json:"namespace"`
 	RepoFullName string `json:"repo_full_name"`
 	RepoType     string `json:"repo_type"`
+}
+
+// ProjectVisibilityChange describes a project-wide publication permission change.
+type ProjectVisibilityChange struct {
+	ProjectID   int64  `json:"project_id"`
+	ProjectName string `json:"project_name"`
+	OldPublic   bool   `json:"old_public"`
+	NewPublic   bool   `json:"new_public"`
 }

@@ -23,6 +23,7 @@ import (
 	"github.com/goharbor/harbor/src/controller/event/handler/p2p"
 	"github.com/goharbor/harbor/src/controller/event/handler/replication"
 	"github.com/goharbor/harbor/src/controller/event/handler/webhook/artifact"
+	projectWebhook "github.com/goharbor/harbor/src/controller/event/handler/webhook/project"
 	"github.com/goharbor/harbor/src/controller/event/handler/webhook/quota"
 	"github.com/goharbor/harbor/src/controller/event/handler/webhook/scan"
 	"github.com/goharbor/harbor/src/controller/event/metadata"
@@ -34,6 +35,7 @@ import (
 
 func init() {
 	// notification
+	_ = notifier.Subscribe(event.TopicProjectVisibilityChanged, &projectWebhook.Handler{})
 	_ = notifier.Subscribe(event.TopicPushArtifact, &artifact.Handler{})
 	_ = notifier.Subscribe(event.TopicPullArtifact, &artifact.Handler{})
 	_ = notifier.Subscribe(event.TopicDeleteArtifact, &artifact.Handler{})

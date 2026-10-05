@@ -84,3 +84,24 @@ func TestCloudEvents_Format(t *testing.T) {
 		assert.Equal(t, `{"resources":[{"digest":"sha256:dde8e930c7b6a490f728e66292bc9bce42efc9bbb5278bae40e4f30f6e00fe8c","tag":"sha256:dde8e930c7b6a490f728e66292bc9bce42efc9bbb5278bae40e4f30f6e00fe8c","resource_url":"harbor.dev/library/busybox@sha256:dde8e930c7b6a490f728e66292bc9bce42efc9bbb5278bae40e4f30f6e00fe8c"}],"repository":{"date_created":1677053165,"name":"busybox","namespace":"library","repo_full_name":"library/busybox","repo_type":"public"}}`, string(event.Data()))
 	}
 }
+
+func TestCloudEventsProjectVisibilityChange(t *testing.T) {
+	he := &model.HookEvent{
+		ProjectID: 42, PolicyID: 3, EventType: "PROJECT_VISIBILITY_CHANGED",
+		Payload: &model.Payload{
+			Type: "PROJECT_VISIBILITY_CHANGED", OccurAt: 1678082923, Operator: "admin",
+			EventData: &model.EventData{ProjectVisibility: &model.ProjectVisibilityChange{
+				ProjectID: 42, ProjectName: "workspace-public-release", OldPublic: true, NewPublic: false,
+			}},
+		},
+	}
+	_, data, err := (&CloudEvents{}).Format(lib.WithXRequestID(context.Background(), "visibility-request"), he)
+	assert.NoError(t, err)
+	e := cloudevents.NewEvent()
+	assert.NoError(t, json.Unmarshal(data, &e))
+	assert.Equal(t, "harbor.project.visibility.changed", e.Type())
+	assert.Equal(t, "/projects/42/webhook/policies/3", e.Source())
+	assert.Equal(t, "visibility-request", e.Extensions()["requestid"])
+	assert.Equal(t, "admin", e.Extensions()["operator"])
+	assert.JSONEq(t, `{"project_visibility":{"project_id":42,"project_name":"workspace-public-release","old_public":true,"new_public":false}}`, string(e.Data()))
+}

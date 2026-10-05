@@ -31,6 +31,7 @@ import (
 	"github.com/goharbor/harbor/src/common/security/local"
 	robotSec "github.com/goharbor/harbor/src/common/security/robot"
 	"github.com/goharbor/harbor/src/controller/artifact"
+	visibilitymetadata "github.com/goharbor/harbor/src/controller/event/metadata"
 	"github.com/goharbor/harbor/src/controller/p2p/preheat"
 	"github.com/goharbor/harbor/src/controller/project"
 	"github.com/goharbor/harbor/src/controller/quota"
@@ -548,11 +549,12 @@ func (a *projectAPI) UpdateProject(ctx context.Context, params operation.UpdateP
 		return a.SendError(ctx, err)
 	}
 
-	p, err := a.projectCtl.Get(ctx, projectNameOrID, project.Metadata(false))
+	p, err := a.projectCtl.Get(ctx, projectNameOrID, project.Metadata(true))
 	if err != nil {
 		return a.SendError(ctx, err)
 	}
 
+	oldPublic := p.IsPublic()
 	if params.Project.CVEAllowlist != nil {
 		if params.Project.CVEAllowlist.ProjectID == 0 {
 			// project_id in cve_allowlist not provided or provided as 0, let it to be the id of the project which will be updating
@@ -598,6 +600,9 @@ func (a *projectAPI) UpdateProject(ctx context.Context, params operation.UpdateP
 		return a.SendError(ctx, err)
 	}
 
+	if params.Project.Metadata != nil && params.Project.Metadata.Public != "" {
+		visibilitymetadata.QueueProjectVisibilityChange(ctx, p.ProjectID, p.Name, oldPublic, p.IsPublic())
+	}
 	return operation.NewUpdateProjectOK()
 }
 

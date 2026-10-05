@@ -22,6 +22,7 @@ import (
 	"github.com/go-openapi/runtime/middleware"
 
 	"github.com/goharbor/harbor/src/common/rbac"
+	eventmetadata "github.com/goharbor/harbor/src/controller/event/metadata"
 	"github.com/goharbor/harbor/src/controller/project"
 	"github.com/goharbor/harbor/src/controller/project/metadata"
 	"github.com/goharbor/harbor/src/lib/errors"
@@ -60,6 +61,9 @@ func (p *projectMetadataAPI) AddProjectMetadatas(ctx context.Context, params ope
 	if err = p.ctl.Add(ctx, project.ProjectID, metadata); err != nil {
 		return p.SendError(ctx, err)
 	}
+	if metadata[proModels.ProMetaPublic] != "" {
+		eventmetadata.QueueProjectVisibilityChange(ctx, project.ProjectID, project.Name, project.IsPublic(), metadata[proModels.ProMetaPublic] == "true")
+	}
 	return operation.NewAddProjectMetadatasOK()
 }
 
@@ -90,6 +94,9 @@ func (p *projectMetadataAPI) DeleteProjectMetadata(ctx context.Context, params o
 	}
 	if err = p.ctl.Delete(ctx, project.ProjectID, params.MetaName); err != nil {
 		return p.SendError(ctx, err)
+	}
+	if params.MetaName == proModels.ProMetaPublic {
+		eventmetadata.QueueProjectVisibilityChange(ctx, project.ProjectID, project.Name, project.IsPublic(), false)
 	}
 	return operation.NewDeleteProjectMetadataOK()
 }
@@ -128,6 +135,9 @@ func (p *projectMetadataAPI) UpdateProjectMetadata(ctx context.Context, params o
 	}
 	if err = p.ctl.Update(ctx, project.ProjectID, metadata); err != nil {
 		return p.SendError(ctx, err)
+	}
+	if metadata[proModels.ProMetaPublic] != "" {
+		eventmetadata.QueueProjectVisibilityChange(ctx, project.ProjectID, project.Name, project.IsPublic(), metadata[proModels.ProMetaPublic] == "true")
 	}
 	return operation.NewUpdateProjectMetadataOK()
 }

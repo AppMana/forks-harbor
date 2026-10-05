@@ -51,16 +51,17 @@ const (
 var (
 	// eventTypeMapping defines the mapping of harbor event type and CloudEvents type.
 	eventTypeMapping = map[string]string{
-		event.TopicDeleteArtifact:    eventType("artifact.deleted"),
-		event.TopicPullArtifact:      eventType("artifact.pulled"),
-		event.TopicPushArtifact:      eventType("artifact.pushed"),
-		event.TopicQuotaExceed:       eventType("quota.exceeded"),
-		event.TopicQuotaWarning:      eventType("quota.warned"),
-		event.TopicReplication:       eventType("replication.status.changed"),
-		event.TopicScanningFailed:    eventType("scan.failed"),
-		event.TopicScanningCompleted: eventType("scan.completed"),
-		event.TopicScanningStopped:   eventType("scan.stopped"),
-		event.TopicTagRetention:      eventType("tag_retention.finished"),
+		event.TopicProjectVisibilityChanged: eventType("project.visibility.changed"),
+		event.TopicDeleteArtifact:           eventType("artifact.deleted"),
+		event.TopicPullArtifact:             eventType("artifact.pulled"),
+		event.TopicPushArtifact:             eventType("artifact.pushed"),
+		event.TopicQuotaExceed:              eventType("quota.exceeded"),
+		event.TopicQuotaWarning:             eventType("quota.warned"),
+		event.TopicReplication:              eventType("replication.status.changed"),
+		event.TopicScanningFailed:           eventType("scan.failed"),
+		event.TopicScanningCompleted:        eventType("scan.completed"),
+		event.TopicScanningStopped:          eventType("scan.stopped"),
+		event.TopicTagRetention:             eventType("tag_retention.finished"),
 	}
 )
 
