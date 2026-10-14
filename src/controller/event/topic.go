@@ -50,6 +50,7 @@ const (
 	TopicArtifactLabeled   = "ARTIFACT_LABELED"
 	TopicTagRetention      = "TAG_RETENTION"
 	TopicCreateRobot       = "CREATE_ROBOT"
+	TopicUpdateRobot       = "UPDATE_ROBOT"
 	TopicDeleteRobot       = "DELETE_ROBOT"
 	TopicCommonEvent       = "COMMON_API"
 	ResourceTypeProject    = "project"
@@ -405,6 +406,8 @@ type CreateRobotEvent struct {
 	Robot     *robotModel.Robot
 	Operator  string
 	OccurAt   time.Time
+	// ProjectIDs are the projects the robot's permissions name.
+	ProjectIDs []int64
 }
 
 // ResolveToAuditLog ...
@@ -432,6 +435,8 @@ type DeleteRobotEvent struct {
 	Robot     *robotModel.Robot
 	Operator  string
 	OccurAt   time.Time
+	// ProjectIDs are the projects the robot's permissions named before deletion.
+	ProjectIDs []int64
 }
 
 // ResolveToAuditLog ...
@@ -451,6 +456,22 @@ func (c *DeleteRobotEvent) ResolveToAuditLog() (*model.AuditLogExt, error) {
 func (c *DeleteRobotEvent) String() string {
 	return fmt.Sprintf("Name-%s Operator-%s OccurAt-%s",
 		c.Robot.Name, c.Operator, c.OccurAt.Format("2006-01-02 15:04:05"))
+}
+
+// UpdateRobotEvent is the updating robot event: its secret, description,
+// disabled flag, duration or permissions changed.
+type UpdateRobotEvent struct {
+	EventType string
+	Robot     *robotModel.Robot
+	Operator  string
+	OccurAt   time.Time
+	// ProjectIDs are the projects the robot's permissions named before or after the update.
+	ProjectIDs []int64
+}
+
+func (u *UpdateRobotEvent) String() string {
+	return fmt.Sprintf("Name-%s Operator-%s OccurAt-%s",
+		u.Robot.Name, u.Operator, u.OccurAt.Format("2006-01-02 15:04:05"))
 }
 
 // ProjectVisibilityChangedEvent is emitted only after the API transaction commits.

@@ -83,6 +83,10 @@ func initSupportedNotifyType() {
 
 	eventTypes := []string{
 		event.TopicProjectVisibilityChanged,
+		event.TopicDeleteProject,
+		event.TopicCreateRobot,
+		event.TopicUpdateRobot,
+		event.TopicDeleteRobot,
 		event.TopicPushArtifact,
 		event.TopicPullArtifact,
 		event.TopicDeleteArtifact,

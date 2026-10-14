@@ -111,6 +111,7 @@ func (suite *ControllerTestSuite) TestCreate() {
 	robotMgr.On("Create", mock.Anything, mock.Anything).Return(int64(1), nil)
 	rbacMgr.On("CreateRbacPolicy", mock.Anything, mock.Anything, mock.Anything).Return(int64(1), nil)
 	rbacMgr.On("CreatePermission", mock.Anything, mock.Anything, mock.Anything).Return(int64(1), nil)
+	rbacMgr.On("GetPermissionsByRole", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
 
 	id, _, err := c.Create(ctx, &Robot{
 		Robot: model.Robot{
@@ -157,6 +158,7 @@ func (suite *ControllerTestSuite) TestDelete() {
 	}, nil)
 	robotMgr.On("Delete", mock.Anything, mock.Anything).Return(nil)
 	rbacMgr.On("DeletePermissionsByRole", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	rbacMgr.On("GetPermissionsByRole", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
 
 	err := c.Delete(ctx, int64(1))
 	suite.Nil(err)
@@ -181,6 +183,7 @@ func (suite *ControllerTestSuite) TestUpdate() {
 
 	rbacMgr.On("CreateRbacPolicy", mock.Anything, mock.Anything, mock.Anything).Return(int64(1), nil)
 	rbacMgr.On("CreatePermission", mock.Anything, mock.Anything, mock.Anything).Return(int64(1), nil)
+	rbacMgr.On("GetPermissionsByRole", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
 
 	err := c.Update(ctx, &Robot{
 		Robot: model.Robot{

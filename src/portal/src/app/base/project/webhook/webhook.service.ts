@@ -15,6 +15,10 @@ import { Injectable } from '@angular/core';
 
 const EVENT_TYPES_TEXT_MAP = {
     PROJECT_VISIBILITY_CHANGED: 'Project visibility changed',
+    DELETE_PROJECT: 'Project deleted',
+    CREATE_ROBOT: 'Robot account created',
+    UPDATE_ROBOT: 'Robot account updated',
+    DELETE_ROBOT: 'Robot account deleted',
     REPLICATION: 'Replication status changed',
     PUSH_ARTIFACT: 'Artifact pushed',
     PULL_ARTIFACT: 'Artifact pulled',

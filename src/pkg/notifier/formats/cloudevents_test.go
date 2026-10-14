@@ -105,3 +105,28 @@ func TestCloudEventsProjectVisibilityChange(t *testing.T) {
 	assert.Equal(t, "admin", e.Extensions()["operator"])
 	assert.JSONEq(t, `{"project_visibility":{"project_id":42,"project_name":"workspace-public-release","old_public":true,"new_public":false}}`, string(e.Data()))
 }
+
+func TestCloudEventsRobotAndProjectDeletion(t *testing.T) {
+	robot := &model.EventData{Robot: &model.RobotAccount{ID: 7, Name: "robot$pusher", Level: "system", ProjectIDs: []int64{42}, Disabled: true, ExpiresAt: -1}}
+	for eventType, expected := range map[string]struct {
+		ceType string
+		data   *model.EventData
+		json   string
+	}{
+		"CREATE_ROBOT":   {"harbor.robot.created", robot, `{"robot":{"id":7,"name":"robot$pusher","level":"system","project_ids":[42],"disabled":true,"expires_at":-1}}`},
+		"UPDATE_ROBOT":   {"harbor.robot.updated", robot, `{"robot":{"id":7,"name":"robot$pusher","level":"system","project_ids":[42],"disabled":true,"expires_at":-1}}`},
+		"DELETE_ROBOT":   {"harbor.robot.deleted", robot, `{"robot":{"id":7,"name":"robot$pusher","level":"system","project_ids":[42],"disabled":true,"expires_at":-1}}`},
+		"DELETE_PROJECT": {"harbor.project.deleted", &model.EventData{Project: &model.ProjectRef{ProjectID: 42, ProjectName: "library"}}, `{"project":{"project_id":42,"project_name":"library"}}`},
+	} {
+		he := &model.HookEvent{ProjectID: 42, PolicyID: 3, EventType: eventType,
+			Payload: &model.Payload{Type: eventType, OccurAt: 1678082923, Operator: "admin", EventData: expected.data}}
+		_, data, err := (&CloudEvents{}).Format(context.Background(), he)
+		assert.NoError(t, err)
+		e := cloudevents.NewEvent()
+		assert.NoError(t, json.Unmarshal(data, &e))
+		assert.Equal(t, expected.ceType, e.Type())
+		assert.Equal(t, "/projects/42/webhook/policies/3", e.Source())
+		assert.Equal(t, "admin", e.Extensions()["operator"])
+		assert.JSONEq(t, expected.json, string(e.Data()))
+	}
+}

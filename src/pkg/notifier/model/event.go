@@ -39,6 +39,8 @@ type Payload struct {
 // EventData of notification event payload
 type EventData struct {
 	ProjectVisibility *ProjectVisibilityChange `json:"project_visibility,omitempty"`
+	Project           *ProjectRef              `json:"project,omitempty"`
+	Robot             *RobotAccount            `json:"robot,omitempty"`
 	Resources         []*Resource              `json:"resources,omitempty"`
 	Repository        *Repository              `json:"repository,omitempty"`
 	Replication       *model.Replication       `json:"replication,omitempty"`
@@ -71,4 +73,25 @@ type ProjectVisibilityChange struct {
 	ProjectName string `json:"project_name"`
 	OldPublic   bool   `json:"old_public"`
 	NewPublic   bool   `json:"new_public"`
+}
+
+// ProjectRef identifies a project, e.g. a deleted one.
+type ProjectRef struct {
+	ProjectID   int64  `json:"project_id"`
+	ProjectName string `json:"project_name"`
+}
+
+// RobotAccount describes a created, updated or deleted robot account. The
+// secret is never included.
+type RobotAccount struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+	// Level is "system" or "project".
+	Level string `json:"level"`
+	// ProjectID is set for project level robots.
+	ProjectID int64 `json:"project_id,omitempty"`
+	// ProjectIDs are the projects the robot's permissions name.
+	ProjectIDs []int64 `json:"project_ids,omitempty"`
+	Disabled   bool    `json:"disabled"`
+	ExpiresAt  int64   `json:"expires_at"`
 }

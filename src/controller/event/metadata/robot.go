@@ -28,16 +28,18 @@ import (
 
 // CreateRobotEventMetadata is the metadata from which the create robot event can be resolved
 type CreateRobotEventMetadata struct {
-	Ctx   context.Context
-	Robot *model.Robot
+	Ctx        context.Context
+	Robot      *model.Robot
+	ProjectIDs []int64
 }
 
 // Resolve to the event from the metadata
 func (c *CreateRobotEventMetadata) Resolve(event *event.Event) error {
 	data := &event2.CreateRobotEvent{
-		EventType: event2.TopicCreateRobot,
-		Robot:     c.Robot,
-		OccurAt:   time.Now(),
+		EventType:  event2.TopicCreateRobot,
+		Robot:      c.Robot,
+		OccurAt:    time.Now(),
+		ProjectIDs: c.ProjectIDs,
 	}
 	cx, exist := security.FromContext(c.Ctx)
 	if exist {
@@ -51,17 +53,19 @@ func (c *CreateRobotEventMetadata) Resolve(event *event.Event) error {
 
 // DeleteRobotEventMetadata is the metadata from which the delete robot event can be resolved
 type DeleteRobotEventMetadata struct {
-	Ctx      context.Context
-	Robot    *model.Robot
-	Operator string
+	Ctx        context.Context
+	Robot      *model.Robot
+	Operator   string
+	ProjectIDs []int64
 }
 
 // Resolve to the event from the metadata
 func (d *DeleteRobotEventMetadata) Resolve(event *event.Event) error {
 	data := &event2.DeleteRobotEvent{
-		EventType: event2.TopicDeleteRobot,
-		Robot:     d.Robot,
-		OccurAt:   time.Now(),
+		EventType:  event2.TopicDeleteRobot,
+		Robot:      d.Robot,
+		OccurAt:    time.Now(),
+		ProjectIDs: d.ProjectIDs,
 	}
 	if d.Operator != "" {
 		data.Operator = d.Operator
@@ -73,6 +77,30 @@ func (d *DeleteRobotEventMetadata) Resolve(event *event.Event) error {
 	}
 	data.Robot.Name = fmt.Sprintf("%s%s", config.RobotPrefix(d.Ctx), data.Robot.Name)
 	event.Topic = event2.TopicDeleteRobot
+	event.Data = data
+	return nil
+}
+
+// UpdateRobotEventMetadata is the metadata from which the update robot event can be resolved
+type UpdateRobotEventMetadata struct {
+	Ctx        context.Context
+	Robot      *model.Robot
+	ProjectIDs []int64
+}
+
+// Resolve to the event from the metadata. Updated robots were read through
+// the robot controller, so their names already carry the robot prefix.
+func (u *UpdateRobotEventMetadata) Resolve(event *event.Event) error {
+	data := &event2.UpdateRobotEvent{
+		EventType:  event2.TopicUpdateRobot,
+		Robot:      u.Robot,
+		OccurAt:    time.Now(),
+		ProjectIDs: u.ProjectIDs,
+	}
+	if cx, exist := security.FromContext(u.Ctx); exist {
+		data.Operator = cx.GetUsername()
+	}
+	event.Topic = event2.TopicUpdateRobot
 	event.Data = data
 	return nil
 }

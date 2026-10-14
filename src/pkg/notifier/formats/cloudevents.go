@@ -52,6 +52,10 @@ var (
 	// eventTypeMapping defines the mapping of harbor event type and CloudEvents type.
 	eventTypeMapping = map[string]string{
 		event.TopicProjectVisibilityChanged: eventType("project.visibility.changed"),
+		event.TopicDeleteProject:            eventType("project.deleted"),
+		event.TopicCreateRobot:              eventType("robot.created"),
+		event.TopicUpdateRobot:              eventType("robot.updated"),
+		event.TopicDeleteRobot:              eventType("robot.deleted"),
 		event.TopicDeleteArtifact:           eventType("artifact.deleted"),
 		event.TopicPullArtifact:             eventType("artifact.pulled"),
 		event.TopicPushArtifact:             eventType("artifact.pushed"),

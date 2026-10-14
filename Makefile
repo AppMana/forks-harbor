@@ -639,4 +639,4 @@ all: install
 .PHONY: test_project_visibility
 # Uses the same pinned API generator as core builds.
 test_project_visibility: gen_apis
-	cd src && go test -race ./controller/event/metadata ./pkg/notifier/formats ./controller/event/handler/webhook/project ./server/middleware/notification ./server/v2.0/handler
+	cd src && go test -race ./controller/event/metadata ./pkg/notifier/formats ./pkg/notification ./controller/event/handler/webhook/project ./controller/event/handler/webhook/robot ./controller/robot ./server/middleware/notification ./server/v2.0/handler

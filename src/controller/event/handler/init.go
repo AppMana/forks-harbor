@@ -25,6 +25,7 @@ import (
 	"github.com/goharbor/harbor/src/controller/event/handler/webhook/artifact"
 	projectWebhook "github.com/goharbor/harbor/src/controller/event/handler/webhook/project"
 	"github.com/goharbor/harbor/src/controller/event/handler/webhook/quota"
+	robotWebhook "github.com/goharbor/harbor/src/controller/event/handler/webhook/robot"
 	"github.com/goharbor/harbor/src/controller/event/handler/webhook/scan"
 	"github.com/goharbor/harbor/src/controller/event/metadata"
 	"github.com/goharbor/harbor/src/jobservice/job"
@@ -36,6 +37,10 @@ import (
 func init() {
 	// notification
 	_ = notifier.Subscribe(event.TopicProjectVisibilityChanged, &projectWebhook.Handler{})
+	_ = notifier.Subscribe(event.TopicDeleteProject, &projectWebhook.DeleteHandler{})
+	_ = notifier.Subscribe(event.TopicCreateRobot, &robotWebhook.Handler{})
+	_ = notifier.Subscribe(event.TopicUpdateRobot, &robotWebhook.Handler{})
+	_ = notifier.Subscribe(event.TopicDeleteRobot, &robotWebhook.Handler{})
 	_ = notifier.Subscribe(event.TopicPushArtifact, &artifact.Handler{})
 	_ = notifier.Subscribe(event.TopicPullArtifact, &artifact.Handler{})
 	_ = notifier.Subscribe(event.TopicDeleteArtifact, &artifact.Handler{})

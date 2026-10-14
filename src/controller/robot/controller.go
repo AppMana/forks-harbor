@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"slices"
 	"strconv"
 	"time"
 
@@ -140,10 +141,15 @@ func (d *controller) Create(ctx context.Context, r *Robot) (int64, string, error
 	if err := d.createPermission(ctx, r); err != nil {
 		return 0, "", err
 	}
+	projectIDs, err := d.permissionProjectIDs(ctx, robotID)
+	if err != nil {
+		return 0, "", err
+	}
 	// fire event
 	notification.AddEvent(ctx, &metadata.CreateRobotEventMetadata{
-		Ctx:   ctx,
-		Robot: rCreate,
+		Ctx:        ctx,
+		Robot:      rCreate,
+		ProjectIDs: projectIDs,
 	})
 	return robotID, pwd, nil
 }
@@ -151,6 +157,11 @@ func (d *controller) Create(ctx context.Context, r *Robot) (int64, string, error
 // Delete ...
 func (d *controller) Delete(ctx context.Context, id int64, option ...*Option) error {
 	rDelete, err := d.robotMgr.Get(ctx, id)
+	if err != nil {
+		return err
+	}
+	// read before the permissions naming them are removed
+	projectIDs, err := d.permissionProjectIDs(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -162,8 +173,9 @@ func (d *controller) Delete(ctx context.Context, id int64, option ...*Option) er
 	}
 	// fire event
 	deleteMetadata := &metadata.DeleteRobotEventMetadata{
-		Ctx:   ctx,
-		Robot: rDelete,
+		Ctx:        ctx,
+		Robot:      rDelete,
+		ProjectIDs: projectIDs,
 	}
 	if len(option) != 0 && option[0].Operator != "" {
 		deleteMetadata.Operator = option[0].Operator
@@ -177,6 +189,11 @@ func (d *controller) Update(ctx context.Context, r *Robot, option *Option) error
 	if r == nil {
 		return errors.New("cannot update a nil robot").WithCode(errors.BadRequestCode)
 	}
+	// the projects before a permission change, which may remove some of them
+	projectIDs, err := d.permissionProjectIDs(ctx, r.ID)
+	if err != nil {
+		return err
+	}
 	if err := d.robotMgr.Update(ctx, &r.Robot, "secret", "description", "disabled", "duration", "expiresat"); err != nil {
 		return err
 	}
@@ -188,8 +205,49 @@ func (d *controller) Update(ctx context.Context, r *Robot, option *Option) error
 		if err := d.createPermission(ctx, r); err != nil {
 			return err
 		}
+		updated, err := d.permissionProjectIDs(ctx, r.ID)
+		if err != nil {
+			return err
+		}
+		projectIDs = mergeProjectIDs(projectIDs, updated)
 	}
+	// fire event
+	notification.AddEvent(ctx, &metadata.UpdateRobotEventMetadata{
+		Ctx:        ctx,
+		Robot:      &r.Robot,
+		ProjectIDs: projectIDs,
+	})
 	return nil
+}
+
+// permissionProjectIDs returns, in ascending order, the projects the robot's
+// permissions name. The "/project/*" and "/system" scopes name no project.
+func (d *controller) permissionProjectIDs(ctx context.Context, robotID int64) ([]int64, error) {
+	permissions, err := d.rbacMgr.GetPermissionsByRole(ctx, ROBOTTYPE, robotID)
+	if err != nil && !errors.IsNotFoundErr(err) {
+		return nil, err
+	}
+	var projectIDs []int64
+	for _, permission := range permissions {
+		ns, ok := rbac_project.NamespaceParse(types.Resource(permission.Scope))
+		if !ok {
+			continue
+		}
+		if projectID, ok := ns.Identity().(int64); ok {
+			projectIDs = mergeProjectIDs(projectIDs, []int64{projectID})
+		}
+	}
+	return projectIDs, nil
+}
+
+func mergeProjectIDs(projectIDs []int64, more []int64) []int64 {
+	for _, projectID := range more {
+		if !slices.Contains(projectIDs, projectID) {
+			projectIDs = append(projectIDs, projectID)
+		}
+	}
+	slices.Sort(projectIDs)
+	return projectIDs
 }
 
 // List ...
