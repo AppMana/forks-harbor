@@ -190,5 +190,12 @@
     "plan": "Reuse official Trivy binary; evaluate adapter separately. Refresh Photon trust using native packages.",
     "integration": "Upstream REST API integration tests passed with real official Trivy 0.76.1 binary, local registry and fixture vulnerability database, on host and inside Docker build.",
     "startup": "Normal non-root entrypoint, healthy and ready endpoints, scanner and adapter version metadata passed with isolated Redis container."
+  },
+  "metadata_followup": {
+    "target_release": "v2.15.4-appmana.2",
+    "reason": "Published appmana.1 runtime verified, but API version was blank because linker flags referenced nonexistent src/lib/version; actual package is src/pkg/version.",
+    "change": "Core, jobservice and registryctl link the correct package. Each Docker build executes a metadata verifier using exactly the flags used to build its binary.",
+    "regression": "Verifier passes correct flags and rejects the old incorrect path.",
+    "status": "All three binaries compile locally; regression verifier and actionlint pass. CI and appmana.2 deployment pending."
   }
 }

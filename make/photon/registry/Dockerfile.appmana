@@ -22,7 +22,10 @@ WORKDIR /harbor
 COPY . .
 WORKDIR /harbor/src
 RUN go run github.com/go-swagger/go-swagger/cmd/swagger@v0.33.1 generate server --template-dir=../tools/swagger/templates --exclude-main --additional-initialism=CVE --additional-initialism=GC --additional-initialism=OIDC -f ../api/v2.0/swagger.yaml -A harbor --target server/v2.0
-RUN go build -p 2 -trimpath -ldflags='-s -w -X github.com/goharbor/harbor/src/lib/version.ReleaseVersion=v2.15.4-appmana.1' -o /harbor_registryctl ./registryctl
+ARG GIT_COMMIT=unknown
+RUN flags="-s -w -X github.com/goharbor/harbor/src/pkg/version.ReleaseVersion=v2.15.4-appmana.2 -X github.com/goharbor/harbor/src/pkg/version.GitCommit=${GIT_COMMIT}" \
+ && go run -ldflags "$flags" ../make/photon/common/verify-version.go v2.15.4-appmana.2 "$GIT_COMMIT" \
+ && go build -p 2 -trimpath -ldflags "$flags" -o /harbor_registryctl ./registryctl
 
 FROM goharbor/registry-photon:v2.15.4@sha256:dc0cb388a6445c69c8a0c406679290d2991c9698833d9e6e86a23bdfaf2f83c3 AS registry
 USER root

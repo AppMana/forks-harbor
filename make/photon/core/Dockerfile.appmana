@@ -5,7 +5,9 @@ COPY . .
 WORKDIR /harbor/src
 RUN go run github.com/go-swagger/go-swagger/cmd/swagger@v0.33.1 generate server --template-dir=../tools/swagger/templates --exclude-main --additional-initialism=CVE --additional-initialism=GC --additional-initialism=OIDC -f ../api/v2.0/swagger.yaml -A harbor --target server/v2.0
 ARG GIT_COMMIT=unknown
-RUN CGO_ENABLED=0 go build -trimpath -ldflags "-w -s -X github.com/goharbor/harbor/src/lib/version.GitCommit=${GIT_COMMIT} -X github.com/goharbor/harbor/src/lib/version.ReleaseVersion=v2.15.4-appmana.1" -o /harbor_core ./core
+RUN flags="-w -s -X github.com/goharbor/harbor/src/pkg/version.GitCommit=${GIT_COMMIT} -X github.com/goharbor/harbor/src/pkg/version.ReleaseVersion=v2.15.4-appmana.2" \
+ && go run -ldflags "$flags" ../make/photon/common/verify-version.go v2.15.4-appmana.2 "$GIT_COMMIT" \
+ && CGO_ENABLED=0 go build -trimpath -ldflags "$flags" -o /harbor_core ./core
 RUN CGO_ENABLED=0 go build -o /verify-trust ../make/photon/common/verify-trust.go
 FROM goharbor/harbor-core:v2.15.4@sha256:7d2ba5304a729887cdec7cb222a82b500278423de230ae5150c386a6c332b112
 USER root
