@@ -1,0 +1,11 @@
+--- a/vendor/github.com/xenolf/lego/acme/dns_challenge.go
++++ b/vendor/github.com/xenolf/lego/acme/dns_challenge.go
+@@ -167,7 +167,7 @@
+ 		udp := &dns.Client{Net: "udp", Timeout: DNSTimeout}
+ 		in, _, err = udp.Exchange(m, ns)
+ 
+-		if err == dns.ErrTruncated {
++		if in != nil && in.Truncated {
+ 			tcp := &dns.Client{Net: "tcp", Timeout: DNSTimeout}
+ 			// If the TCP request suceeds, the err will reset to nil
+ 			in, _, err = tcp.Exchange(m, ns)

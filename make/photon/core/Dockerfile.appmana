@@ -1,9 +1,18 @@
-FROM golang:1.26.4 AS build
+FROM golang:1.27.3-bookworm@sha256:972b4110ba0f47539a975c31e52c64765e1ff19f2d74469ae4a595c6676e80a5 AS build
+ENV GOTOOLCHAIN=local GOMAXPROCS=2
 WORKDIR /harbor
 COPY . .
 WORKDIR /harbor/src
 RUN go run github.com/go-swagger/go-swagger/cmd/swagger@v0.33.1 generate server --template-dir=../tools/swagger/templates --exclude-main --additional-initialism=CVE --additional-initialism=GC --additional-initialism=OIDC -f ../api/v2.0/swagger.yaml -A harbor --target server/v2.0
 ARG GIT_COMMIT=unknown
-RUN CGO_ENABLED=0 go build -trimpath -ldflags "-w -s -X github.com/goharbor/harbor/src/lib/version.GitCommit=${GIT_COMMIT} -X github.com/goharbor/harbor/src/lib/version.ReleaseVersion=v2.15.2-appmana.2" -o /harbor_core ./core
-FROM goharbor/harbor-core:v2.15.2
+RUN CGO_ENABLED=0 go build -trimpath -ldflags "-w -s -X github.com/goharbor/harbor/src/lib/version.GitCommit=${GIT_COMMIT} -X github.com/goharbor/harbor/src/lib/version.ReleaseVersion=v2.15.4-appmana.1" -o /harbor_core ./core
+RUN CGO_ENABLED=0 go build -o /verify-trust ../make/photon/common/verify-trust.go
+FROM goharbor/harbor-core:v2.15.4@sha256:7d2ba5304a729887cdec7cb222a82b500278423de230ae5150c386a6c332b112
+USER root
+RUN tdnf upgrade -y && tdnf clean all \
+ && chown harbor:harbor /etc/pki/tls/certs/ca-bundle.crt \
+ && rm -f /harbor/ca-bundle.crt.original /home/harbor/ca-bundle.crt.original
+COPY --from=build /verify-trust /tmp/verify-trust
+RUN /tmp/verify-trust /etc/pki/tls/certs/ca-bundle.crt && rm /tmp/verify-trust
+USER harbor
 COPY --from=build --chown=10000:10000 --chmod=0755 /harbor_core /harbor/harbor_core

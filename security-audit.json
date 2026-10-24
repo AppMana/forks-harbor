@@ -1,0 +1,194 @@
+{
+  "upstream": "v2.15.4",
+  "release": "v2.15.4-appmana.1",
+  "go": "1.27.3",
+  "node": "26.12.1",
+  "photon_ca_package": "20261020-1.ph5",
+  "official_runtime_audit": [
+    {
+      "image": "goharbor/harbor-core:v2.15.4",
+      "digest": "goharbor/harbor-core@sha256:7d2ba5304a729887cdec7cb222a82b500278423de230ae5150c386a6c332b112",
+      "go": "/tmp/appmana-harbor-security-audit/core-official-binary: go1.26.7",
+      "trust_passed": false,
+      "trust_result": "panic: distrusted root in runtime bundle: 86a1ecba089c4a8d3bbe2734c612ba341d813e043cf9e8a862cd5c57a36bbe6b"
+    },
+    {
+      "image": "goharbor/harbor-jobservice:v2.15.4",
+      "digest": "goharbor/harbor-jobservice@sha256:f143578ef30e2be5c48873298257ed0fca31545025958c534e536a06765d2b82",
+      "go": "/tmp/appmana-harbor-security-audit/jobservice-official-binary: go1.26.7",
+      "trust_passed": false,
+      "trust_result": "panic: distrusted root in runtime bundle: 86a1ecba089c4a8d3bbe2734c612ba341d813e043cf9e8a862cd5c57a36bbe6b"
+    },
+    {
+      "image": "goharbor/registry-photon:v2.15.4",
+      "digest": "goharbor/registry-photon@sha256:dc0cb388a6445c69c8a0c406679290d2991c9698833d9e6e86a23bdfaf2f83c3",
+      "go": "/tmp/appmana-harbor-security-audit/registry-photon-official-binary: go1.26.7",
+      "trust_passed": false,
+      "trust_result": "panic: distrusted root in runtime bundle: 86a1ecba089c4a8d3bbe2734c612ba341d813e043cf9e8a862cd5c57a36bbe6b"
+    },
+    {
+      "image": "goharbor/harbor-registryctl:v2.15.4",
+      "digest": "goharbor/harbor-registryctl@sha256:30bd1ace4e3bb390d75b84673f98ddb4a69fcc6d116932ea764391df01943fb7",
+      "go": "/tmp/appmana-harbor-security-audit/harbor-registryctl-official-binary: go1.26.7",
+      "trust_passed": false,
+      "trust_result": "panic: distrusted root in runtime bundle: 86a1ecba089c4a8d3bbe2734c612ba341d813e043cf9e8a862cd5c57a36bbe6b"
+    },
+    {
+      "image": "goharbor/harbor-portal:v2.15.4",
+      "digest": "goharbor/harbor-portal@sha256:01edf478505b21dba23a83c095f6ecac0c1e705690093edbab41e9a4d6754a75",
+      "go": null,
+      "trust_passed": false,
+      "trust_result": "panic: distrusted root in runtime bundle: 86a1ecba089c4a8d3bbe2734c612ba341d813e043cf9e8a862cd5c57a36bbe6b"
+    },
+    {
+      "image": "goharbor/trivy-adapter-photon:v2.15.4",
+      "digest": "goharbor/trivy-adapter-photon@sha256:813ca81b4a4ea0f44f5fa81cca2645eeb58d4b1f6c66b428df9d506174bb71d9",
+      "go": {
+        "adapter": "1.26.7",
+        "trivy": "1.27.1"
+      },
+      "trust_passed": false,
+      "trust_result": "distrusted root: 86a1ecba089c4a8d3bbe2734c612ba341d813e043cf9e8a862cd5c57a36bbe6b"
+    }
+  ],
+  "scans": {
+    "patched-govulncheck": {
+      "reachable": [],
+      "non_reachable": [
+        "GO-2022-0635",
+        "GO-2022-0646",
+        "GO-2025-3460",
+        "GO-2025-3884",
+        "GO-2026-4942",
+        "GO-2026-5094",
+        "GO-2026-5185",
+        "GO-2026-5435",
+        "GO-2026-5543",
+        "GO-2026-5841",
+        "GO-2026-5932"
+      ]
+    },
+    "distribution-patched-govulncheck": {
+      "reachable": [],
+      "non_reachable": [
+        "GO-2022-0635",
+        "GO-2022-0646",
+        "GO-2026-5932"
+      ]
+    },
+    "scanner-source-govulncheck": {
+      "reachable": [
+        "GO-2025-3540"
+      ],
+      "non_reachable": [
+        "GO-2026-5841",
+        "GO-2026-6603",
+        "GO-2026-6610",
+        "GO-2026-6611",
+        "GO-2026-6612",
+        "GO-2026-6617"
+      ]
+    },
+    "scanner-patched-govulncheck": {
+      "reachable": [],
+      "non_reachable": []
+    }
+  },
+  "passed_tests": [
+    "HTTP client tests",
+    "race: event metadata",
+    "race: project webhooks",
+    "race: robot webhooks",
+    "race: CloudEvents formats",
+    "DNS UDP truncation retries over TCP",
+    "race: PostgreSQL-backed robot controller",
+    "race: notification supported events",
+    "race: PostgreSQL-backed v2 API handlers"
+  ],
+  "compatibility_patch": "Legacy lego checks the DNS response Truncated flag instead of the removed dns.ErrTruncated sentinel. Registry retains upstream include_oss and include_gcs build flags.",
+  "build_status": "All six local images built and verified. Runtime Go binaries use 1.27.3; every bundle passes invalidated-root checks, including after normal non-root certificate initialization. CI and publication pending.",
+  "production_deployed": false,
+  "registry_canary": {
+    "normal_entrypoint_and_registry_api": "passed",
+    "blob_upload_digest_and_download": "passed",
+    "manifest_push_and_pull": "passed",
+    "manifest_deletion": "passed"
+  },
+  "runtime_compatibility": "Restore Harbor ownership of refreshed CA bundle and remove stale original snapshots so non-root entrypoints can append internal/custom CAs.",
+  "local_images": [
+    {
+      "image": "appmana-harbor-core:security-2.15.4",
+      "imageID": "sha256:286fec6dd4c73c84ad4f6ecf84e3cc1a9d5487b98e35c6f960a15655b44b3eed",
+      "user": "harbor",
+      "go": [
+        "/tmp/appmana-harbor-security-audit/core-patched-binary-0: go1.27.3"
+      ],
+      "trust": "Verified 168 runtime certificates",
+      "cert_startup": "non-root certificate initialization and post-init trust passed"
+    },
+    {
+      "image": "appmana-harbor-portal:security-2.15.4",
+      "imageID": "sha256:c7083361da738818a3cba05ee0a7b10b323f37bc40793a5c042bc06c33402eac",
+      "user": "nginx",
+      "go": [],
+      "trust": "Verified 168 runtime certificates",
+      "cert_startup": null
+    },
+    {
+      "image": "appmana-harbor-jobservice:security-2.15.4",
+      "imageID": "sha256:00622e6d6db19a596ef363e3c9e554f6c50b832209eed4a78c66a74e29edb06e",
+      "user": "harbor",
+      "go": [
+        "/tmp/appmana-harbor-security-audit/jobservice-patched-binary-0: go1.27.3"
+      ],
+      "trust": "Verified 168 runtime certificates",
+      "cert_startup": "non-root certificate initialization and post-init trust passed"
+    },
+    {
+      "image": "appmana-harbor-registry:security-2.15.4",
+      "imageID": "sha256:8b2ea5212611ef985d91df1809a73ee2835f83980f5ad3ff382c83df40c1989e",
+      "user": "harbor",
+      "go": [
+        "/tmp/appmana-harbor-security-audit/registry-patched-binary-0: go1.27.3"
+      ],
+      "trust": "Verified 168 runtime certificates",
+      "cert_startup": "non-root certificate initialization and post-init trust passed"
+    },
+    {
+      "image": "appmana-harbor-registryctl:security-2.15.4",
+      "imageID": "sha256:f3ac34afcaeb1d960ccaf0c48c262096f744d0daf8c1cba1d312ad89f19b176c",
+      "user": "harbor",
+      "go": [
+        "/tmp/appmana-harbor-security-audit/registryctl-patched-binary-0: go1.27.3",
+        "/tmp/appmana-harbor-security-audit/registryctl-patched-binary-1: go1.27.3"
+      ],
+      "trust": "Verified 168 runtime certificates",
+      "cert_startup": "non-root certificate initialization and post-init trust passed"
+    },
+    {
+      "image": "appmana-harbor-trivy:security-2.15.4",
+      "imageID": "sha256:32f105668a16aa333a137b57c3b6d457ae51f90756d5b19cd5fa9dc6d83d22e3",
+      "user": "scanner",
+      "go": [
+        "scanner-trivy: go1.27.3",
+        "trivy: go1.27.3"
+      ],
+      "trust": "Verified 168 runtime certificates",
+      "cert_startup": "non-root certificate initialization and post-init trust passed"
+    }
+  ],
+  "scanner_upgrade": {
+    "status": "Local image built and verified; publication and deployment pending.",
+    "adapter_upstream": "v0.39.1",
+    "official_alternative_tags_unavailable": [
+      "goharbor/harbor-scanner-trivy:0.39.1",
+      "goharbor/harbor-scanner-trivy:v0.39.1"
+    ],
+    "trivy_upstream_image": "aquasec/trivy:0.76.1@sha256:790fd66d1697395d8693d1acaa1ea702406a20f109b6fc7bac8db623eca6c06c",
+    "trivy_go": "1.27.3",
+    "trivy_trust": "Verified 118 runtime certificates",
+    "plan": "Reuse official Trivy binary; evaluate adapter separately. Refresh Photon trust using native packages.",
+    "integration": "Upstream REST API integration tests passed with real official Trivy 0.76.1 binary, local registry and fixture vulnerability database, on host and inside Docker build.",
+    "startup": "Normal non-root entrypoint, healthy and ready endpoints, scanner and adapter version metadata passed with isolated Redis container."
+  }
+}

@@ -1,0 +1,29 @@
+FROM aquasec/trivy:0.76.1@sha256:790fd66d1697395d8693d1acaa1ea702406a20f109b6fc7bac8db623eca6c06c AS trivy
+FROM golang:1.27.3-bookworm@sha256:972b4110ba0f47539a975c31e52c64765e1ff19f2d74469ae4a595c6676e80a5 AS build
+ENV GOTOOLCHAIN=local GOMAXPROCS=2
+WORKDIR /scanner
+RUN curl -fsSL https://github.com/goharbor/harbor-scanner-trivy/archive/refs/tags/v0.39.1.tar.gz -o /tmp/source.tar.gz \
+ && echo 'fac3ce6751ead53d294133e4f8c4e0f4185aa02f71eaf66e0b158486dd8a04b9  /tmp/source.tar.gz' | sha256sum -c - \
+ && tar -xzf /tmp/source.tar.gz --strip-components=1 && rm /tmp/source.tar.gz
+COPY make/photon/trivy-adapter/appmana.go.mod ./go.mod
+COPY make/photon/trivy-adapter/appmana.go.sum ./go.sum
+RUN go mod download && go mod verify
+RUN go test -p 2 -short -race ./...
+COPY --from=trivy /usr/local/bin/trivy /usr/local/bin/trivy
+RUN go test -p 2 -race -count=1 -tags=integration ./test/integration/api/...
+ARG GIT_COMMIT=unknown
+RUN CGO_ENABLED=0 go build -p 2 -trimpath -ldflags="-s -w -X main.version=0.39.1-appmana.1 -X main.commit=${GIT_COMMIT}" -o /scanner-trivy ./cmd/scanner-trivy
+COPY make/photon/common/verify-trust.go /tmp/verify-trust.go
+RUN CGO_ENABLED=0 go build -o /verify-trust /tmp/verify-trust.go
+
+FROM goharbor/trivy-adapter-photon:v2.15.4@sha256:813ca81b4a4ea0f44f5fa81cca2645eeb58d4b1f6c66b428df9d506174bb71d9
+USER root
+RUN tdnf upgrade -y && tdnf clean all \
+ && chown scanner:scanner /etc/pki/tls/certs/ca-bundle.crt \
+ && rm -f /home/scanner/ca-bundle.crt.original
+COPY --from=build /verify-trust /tmp/verify-trust
+RUN /tmp/verify-trust /etc/pki/tls/certs/ca-bundle.crt && rm /tmp/verify-trust
+COPY --from=build --chown=scanner:scanner --chmod=0755 /scanner-trivy /home/scanner/bin/scanner-trivy
+COPY --from=trivy --chmod=0755 /usr/local/bin/trivy /usr/local/bin/trivy
+ENV TRIVY_VERSION=v0.76.1
+USER scanner
