@@ -1,0 +1,138 @@
+name: AppMana Harbor release
+
+on:
+  push:
+    branches: [appmana-visibility-events, security-upgrade-20261024]
+  pull_request:
+    branches: [appmana-visibility-events]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  RELEASE: v2.15.4-appmana.1
+  GOTOOLCHAIN: local
+  GOMAXPROCS: 2
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: registry
+          POSTGRES_PASSWORD: harbor-local-test-only
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d registry"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: 1.27.3
+          cache-dependency-path: src/go.sum
+      - name: Generate API and test compatibility
+        working-directory: src
+        env:
+          POSTGRESQL_HOST: localhost
+          POSTGRESQL_PORT: 5432
+          POSTGRESQL_USR: postgres
+          POSTGRESQL_PWD: harbor-local-test-only
+          POSTGRESQL_DATABASE: registry
+          POSTGRES_MIGRATION_SCRIPTS_PATH: ${{ github.workspace }}/make/migrations/postgresql
+          TOKEN_PRIVATE_KEY_PATH: ${{ github.workspace }}/tests/private_key.pem
+        run: |
+          go run github.com/go-swagger/go-swagger/cmd/swagger@v0.33.1 generate server --template-dir=../tools/swagger/templates --exclude-main --additional-initialism=CVE --additional-initialism=GC --additional-initialism=OIDC -f ../api/v2.0/swagger.yaml -A harbor --target server/v2.0
+          go test -race -p 1 ./common/http ./controller/robot ./pkg/notification ./server/v2.0/handler ./controller/event/metadata ./controller/event/handler/webhook/project ./controller/event/handler/webhook/robot ./pkg/notifier/formats
+
+  images:
+    needs: tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        include:
+          - component: core
+            file: make/photon/core/Dockerfile.appmana
+            target: ""
+            binary: /harbor/harbor_core
+            certScript: /harbor/install_cert.sh
+          - component: portal
+            file: make/photon/portal/Dockerfile.appmana
+            target: ""
+            binary: ""
+            certScript: ""
+          - component: jobservice
+            file: make/photon/jobservice/Dockerfile.appmana
+            target: ""
+            binary: /harbor/harbor_jobservice
+            certScript: /harbor/install_cert.sh
+          - component: registry
+            file: make/photon/registry/Dockerfile.appmana
+            target: registry
+            binary: /usr/bin/registry_DO_NOT_USE_GC
+            certScript: /home/harbor/install_cert.sh
+          - component: registryctl
+            file: make/photon/registry/Dockerfile.appmana
+            target: registryctl
+            binary: /home/harbor/harbor_registryctl
+            certScript: /home/harbor/install_cert.sh
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: 1.27.3
+          cache-dependency-path: src/go.sum
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Build release image
+        env:
+          COMPONENT: ${{ matrix.component }}
+          DOCKERFILE: ${{ matrix.file }}
+          TARGET: ${{ matrix.target }}
+        run: |
+          args=()
+          if [[ -n "$TARGET" ]]; then args+=(--target "$TARGET"); fi
+          docker buildx build --load --platform linux/amd64 --file "$DOCKERFILE" "${args[@]}" --build-arg GIT_COMMIT="$GITHUB_SHA" --tag "ghcr.io/appmana/harbor-$COMPONENT:$RELEASE" .
+      - name: Verify runtime trust and toolchain
+        env:
+          COMPONENT: ${{ matrix.component }}
+          BINARY: ${{ matrix.binary }}
+          CERT_SCRIPT: ${{ matrix.certScript }}
+        run: |
+          image="ghcr.io/appmana/harbor-$COMPONENT:$RELEASE"
+          container=$(docker create "$image")
+          trap 'docker rm -f "$container" >/dev/null' EXIT
+          docker cp "$container:/etc/pki/tls/certs/ca-bundle.crt" /tmp/runtime-ca.pem
+          go run make/photon/common/verify-trust.go /tmp/runtime-ca.pem
+          if [[ -n "$BINARY" ]]; then
+            docker cp "$container:$BINARY" /tmp/runtime-binary
+            go version /tmp/runtime-binary | grep -F 'go1.27.3'
+          fi
+          if [[ "$COMPONENT" == registryctl ]]; then
+            docker cp "$container:/usr/bin/registry_DO_NOT_USE_GC" /tmp/registry-binary
+            go version /tmp/registry-binary | grep -F 'go1.27.3'
+          fi
+          if [[ -n "$CERT_SCRIPT" ]]; then
+            docker run --rm --entrypoint /bin/sh "$image" -ec 'test -w /etc/pki/tls/certs/ca-bundle.crt; "$1"' sh "$CERT_SCRIPT"
+          fi
+      - name: Registry API canary
+        if: matrix.component == 'registry'
+        run: |
+          docker run -d --name registry-canary --mount "type=bind,source=$PWD/tests/appmana/registry-canary.yml,target=/etc/registry/config.yml,readonly" --tmpfs /var/lib/registry:uid=10000,gid=10000,mode=0700,size=64m -p 127.0.0.1:5000:5000 "ghcr.io/appmana/harbor-registry:$RELEASE"
+          trap 'docker rm -f registry-canary >/dev/null' EXIT
+          python3 tests/appmana/registry_canary.py http://127.0.0.1:5000
+      - name: Publish verified image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/appmana-visibility-events'
+        env:
+          REGISTRY_TOKEN: ${{ github.token }}
+          COMPONENT: ${{ matrix.component }}
+        run: |
+          printf '%s' "$REGISTRY_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          docker push "ghcr.io/appmana/harbor-$COMPONENT:$RELEASE"
