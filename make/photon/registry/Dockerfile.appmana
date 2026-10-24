@@ -1,0 +1,42 @@
+FROM golang:1.27.3-bookworm@sha256:972b4110ba0f47539a975c31e52c64765e1ff19f2d74469ae4a595c6676e80a5 AS distribution-build
+ENV GOTOOLCHAIN=local GOMAXPROCS=2 CGO_ENABLED=0
+WORKDIR /distribution
+RUN curl -fsSL https://codeload.github.com/goharbor/distribution/tar.gz/ac7c4cedc2f4d45347630beceaaa1639bb9c771a -o /tmp/source.tar.gz \
+ && echo 'f45507c7fc61ddac7ac6e8fc3a69c81b9951347f004e7af533bf058c422f154b  /tmp/source.tar.gz' | sha256sum -c - \
+ && tar -xzf /tmp/source.tar.gz --strip-components=1 && rm /tmp/source.tar.gz
+COPY make/photon/registry/appmana.go.mod ./go.mod
+COPY make/photon/registry/appmana.go.sum ./go.sum
+COPY make/photon/registry/lego-dns-truncation.patch /tmp/lego-dns-truncation.patch
+COPY make/photon/registry/lego-dns-truncation_test.go /tmp/lego-dns-truncation_test.go
+RUN go mod download && go mod verify && go mod vendor \
+ && patch -p1 < /tmp/lego-dns-truncation.patch \
+ && cp /tmp/lego-dns-truncation_test.go vendor/github.com/xenolf/lego/acme/appmana_dns_test.go
+RUN go test -p 2 -timeout 30s github.com/xenolf/lego/acme
+RUN go build -p 2 -tags include_oss,include_gcs -trimpath -ldflags='-s -w -X github.com/docker/distribution/version.Version=2.8.3-harbor.2-appmana.1' -o /registry ./cmd/registry
+COPY make/photon/common/verify-trust.go /tmp/verify-trust.go
+RUN go build -o /verify-trust /tmp/verify-trust.go
+
+FROM golang:1.27.3-bookworm@sha256:972b4110ba0f47539a975c31e52c64765e1ff19f2d74469ae4a595c6676e80a5 AS controller-build
+ENV GOTOOLCHAIN=local GOMAXPROCS=2 CGO_ENABLED=0
+WORKDIR /harbor
+COPY . .
+WORKDIR /harbor/src
+RUN go run github.com/go-swagger/go-swagger/cmd/swagger@v0.33.1 generate server --template-dir=../tools/swagger/templates --exclude-main --additional-initialism=CVE --additional-initialism=GC --additional-initialism=OIDC -f ../api/v2.0/swagger.yaml -A harbor --target server/v2.0
+RUN go build -p 2 -trimpath -ldflags='-s -w -X github.com/goharbor/harbor/src/lib/version.ReleaseVersion=v2.15.4-appmana.1' -o /harbor_registryctl ./registryctl
+
+FROM goharbor/registry-photon:v2.15.4@sha256:dc0cb388a6445c69c8a0c406679290d2991c9698833d9e6e86a23bdfaf2f83c3 AS registry
+USER root
+RUN tdnf upgrade -y && tdnf clean all
+COPY --from=distribution-build /verify-trust /tmp/verify-trust
+RUN /tmp/verify-trust /etc/pki/tls/certs/ca-bundle.crt && rm /tmp/verify-trust
+COPY --from=distribution-build --chown=10000:10000 --chmod=0755 /registry /usr/bin/registry_DO_NOT_USE_GC
+USER harbor
+
+FROM goharbor/harbor-registryctl:v2.15.4@sha256:30bd1ace4e3bb390d75b84673f98ddb4a69fcc6d116932ea764391df01943fb7 AS registryctl
+USER root
+RUN tdnf upgrade -y && tdnf clean all
+COPY --from=distribution-build /verify-trust /tmp/verify-trust
+RUN /tmp/verify-trust /etc/pki/tls/certs/ca-bundle.crt && rm /tmp/verify-trust
+COPY --from=distribution-build --chown=10000:10000 --chmod=0755 /registry /usr/bin/registry_DO_NOT_USE_GC
+COPY --from=controller-build --chown=10000:10000 --chmod=0755 /harbor_registryctl /home/harbor/harbor_registryctl
+USER harbor

@@ -1,0 +1,81 @@
+{
+  "upstream": "v2.15.4",
+  "release": "v2.15.4-appmana.1",
+  "go": "1.27.3",
+  "node": "26.12.1",
+  "photon_ca_package": "20261020-1.ph5",
+  "official_runtime_audit": [
+    {
+      "image": "goharbor/harbor-core:v2.15.4",
+      "digest": "goharbor/harbor-core@sha256:7d2ba5304a729887cdec7cb222a82b500278423de230ae5150c386a6c332b112",
+      "go": "/tmp/appmana-harbor-security-audit/core-official-binary: go1.26.7",
+      "trust_passed": false,
+      "trust_result": "panic: distrusted root in runtime bundle: 86a1ecba089c4a8d3bbe2734c612ba341d813e043cf9e8a862cd5c57a36bbe6b"
+    },
+    {
+      "image": "goharbor/harbor-jobservice:v2.15.4",
+      "digest": "goharbor/harbor-jobservice@sha256:f143578ef30e2be5c48873298257ed0fca31545025958c534e536a06765d2b82",
+      "go": "/tmp/appmana-harbor-security-audit/jobservice-official-binary: go1.26.7",
+      "trust_passed": false,
+      "trust_result": "panic: distrusted root in runtime bundle: 86a1ecba089c4a8d3bbe2734c612ba341d813e043cf9e8a862cd5c57a36bbe6b"
+    },
+    {
+      "image": "goharbor/registry-photon:v2.15.4",
+      "digest": "goharbor/registry-photon@sha256:dc0cb388a6445c69c8a0c406679290d2991c9698833d9e6e86a23bdfaf2f83c3",
+      "go": "/tmp/appmana-harbor-security-audit/registry-photon-official-binary: go1.26.7",
+      "trust_passed": false,
+      "trust_result": "panic: distrusted root in runtime bundle: 86a1ecba089c4a8d3bbe2734c612ba341d813e043cf9e8a862cd5c57a36bbe6b"
+    },
+    {
+      "image": "goharbor/harbor-registryctl:v2.15.4",
+      "digest": "goharbor/harbor-registryctl@sha256:30bd1ace4e3bb390d75b84673f98ddb4a69fcc6d116932ea764391df01943fb7",
+      "go": "/tmp/appmana-harbor-security-audit/harbor-registryctl-official-binary: go1.26.7",
+      "trust_passed": false,
+      "trust_result": "panic: distrusted root in runtime bundle: 86a1ecba089c4a8d3bbe2734c612ba341d813e043cf9e8a862cd5c57a36bbe6b"
+    },
+    {
+      "image": "goharbor/harbor-portal:v2.15.4",
+      "digest": "goharbor/harbor-portal@sha256:01edf478505b21dba23a83c095f6ecac0c1e705690093edbab41e9a4d6754a75",
+      "go": null,
+      "trust_passed": false,
+      "trust_result": "panic: distrusted root in runtime bundle: 86a1ecba089c4a8d3bbe2734c612ba341d813e043cf9e8a862cd5c57a36bbe6b"
+    }
+  ],
+  "scans": {
+    "patched-govulncheck": {
+      "reachable": [],
+      "non_reachable": [
+        "GO-2022-0635",
+        "GO-2022-0646",
+        "GO-2025-3460",
+        "GO-2025-3884",
+        "GO-2026-4942",
+        "GO-2026-5094",
+        "GO-2026-5185",
+        "GO-2026-5435",
+        "GO-2026-5543",
+        "GO-2026-5841",
+        "GO-2026-5932"
+      ]
+    },
+    "distribution-patched-govulncheck": {
+      "reachable": [],
+      "non_reachable": [
+        "GO-2022-0635",
+        "GO-2022-0646",
+        "GO-2026-5932"
+      ]
+    }
+  },
+  "passed_tests": [
+    "HTTP client tests",
+    "race: event metadata",
+    "race: project webhooks",
+    "race: robot webhooks",
+    "race: CloudEvents formats",
+    "DNS UDP truncation retries over TCP"
+  ],
+  "compatibility_patch": "Legacy lego checks the DNS response Truncated flag instead of the removed dns.ErrTruncated sentinel. Registry retains upstream include_oss and include_gcs build flags.",
+  "build_status": "Portal passed; patched core, jobservice and registry components still require final validation.",
+  "production_deployed": false
+}

@@ -1,0 +1,16 @@
+FROM golang:1.27.3-bookworm@sha256:972b4110ba0f47539a975c31e52c64765e1ff19f2d74469ae4a595c6676e80a5 AS build
+ENV GOTOOLCHAIN=local GOMAXPROCS=2
+WORKDIR /harbor
+COPY . .
+WORKDIR /harbor/src
+RUN go run github.com/go-swagger/go-swagger/cmd/swagger@v0.33.1 generate server --template-dir=../tools/swagger/templates --exclude-main --additional-initialism=CVE --additional-initialism=GC --additional-initialism=OIDC -f ../api/v2.0/swagger.yaml -A harbor --target server/v2.0
+ARG GIT_COMMIT=unknown
+RUN CGO_ENABLED=0 go build -trimpath -ldflags "-w -s -X github.com/goharbor/harbor/src/lib/version.GitCommit=${GIT_COMMIT} -X github.com/goharbor/harbor/src/lib/version.ReleaseVersion=v2.15.4-appmana.1" -o /harbor_jobservice ./jobservice
+RUN CGO_ENABLED=0 go build -o /verify-trust ../make/photon/common/verify-trust.go
+FROM goharbor/harbor-jobservice:v2.15.4@sha256:f143578ef30e2be5c48873298257ed0fca31545025958c534e536a06765d2b82
+USER root
+RUN tdnf upgrade -y && tdnf clean all
+COPY --from=build /verify-trust /tmp/verify-trust
+RUN /tmp/verify-trust /etc/pki/tls/certs/ca-bundle.crt && rm /tmp/verify-trust
+USER harbor
+COPY --from=build --chown=10000:10000 --chmod=0755 /harbor_jobservice /harbor/harbor_jobservice
