@@ -73,9 +73,19 @@
     "race: project webhooks",
     "race: robot webhooks",
     "race: CloudEvents formats",
-    "DNS UDP truncation retries over TCP"
+    "DNS UDP truncation retries over TCP",
+    "race: PostgreSQL-backed robot controller",
+    "race: notification supported events",
+    "race: PostgreSQL-backed v2 API handlers"
   ],
   "compatibility_patch": "Legacy lego checks the DNS response Truncated flag instead of the removed dns.ErrTruncated sentinel. Registry retains upstream include_oss and include_gcs build flags.",
-  "build_status": "Portal passed; patched core, jobservice and registry components still require final validation.",
-  "production_deployed": false
+  "build_status": "All components compiled; final core/jobservice/registryctl images are rebuilding with CA ownership correction. Registry normal-entrypoint API canary passed.",
+  "production_deployed": false,
+  "registry_canary": {
+    "normal_entrypoint_and_registry_api": "passed",
+    "blob_upload_digest_and_download": "passed",
+    "manifest_push_and_pull": "passed",
+    "manifest_deletion": "passed"
+  },
+  "runtime_compatibility": "Restore Harbor ownership of refreshed CA bundle and remove stale original snapshots so non-root entrypoints can append internal/custom CAs."
 }

@@ -9,7 +9,9 @@ RUN CGO_ENABLED=0 go build -trimpath -ldflags "-w -s -X github.com/goharbor/harb
 RUN CGO_ENABLED=0 go build -o /verify-trust ../make/photon/common/verify-trust.go
 FROM goharbor/harbor-core:v2.15.4@sha256:7d2ba5304a729887cdec7cb222a82b500278423de230ae5150c386a6c332b112
 USER root
-RUN tdnf upgrade -y && tdnf clean all
+RUN tdnf upgrade -y && tdnf clean all \
+ && chown harbor:harbor /etc/pki/tls/certs/ca-bundle.crt \
+ && rm -f /harbor/ca-bundle.crt.original /home/harbor/ca-bundle.crt.original
 COPY --from=build /verify-trust /tmp/verify-trust
 RUN /tmp/verify-trust /etc/pki/tls/certs/ca-bundle.crt && rm /tmp/verify-trust
 USER harbor
