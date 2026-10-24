@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 env:
-  RELEASE: v2.15.4-appmana.1
+  RELEASE: v2.15.4-appmana.2
   GOTOOLCHAIN: local
   GOMAXPROCS: 2
 
