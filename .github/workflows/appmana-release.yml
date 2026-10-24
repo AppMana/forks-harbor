@@ -84,6 +84,11 @@ jobs:
             target: registryctl
             binary: /home/harbor/harbor_registryctl
             certScript: /home/harbor/install_cert.sh
+          - component: trivy
+            file: make/photon/trivy-adapter/Dockerfile.appmana
+            target: ""
+            binary: /home/scanner/bin/scanner-trivy
+            certScript: /home/scanner/install_cert.sh
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
@@ -118,6 +123,11 @@ jobs:
           if [[ "$COMPONENT" == registryctl ]]; then
             docker cp "$container:/usr/bin/registry_DO_NOT_USE_GC" /tmp/registry-binary
             go version /tmp/registry-binary | grep -F 'go1.27.3'
+          fi
+          if [[ "$COMPONENT" == trivy ]]; then
+            docker cp "$container:/usr/local/bin/trivy" /tmp/trivy-binary
+            go version /tmp/trivy-binary | grep -F 'go1.27.3'
+            docker run --rm --entrypoint /usr/local/bin/trivy "$image" --version | grep -F '0.76.1'
           fi
           if [[ -n "$CERT_SCRIPT" ]]; then
             docker run --rm --entrypoint /bin/sh "$image" -ec 'test -w /etc/pki/tls/certs/ca-bundle.crt; "$1"' sh "$CERT_SCRIPT"

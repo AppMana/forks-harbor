@@ -39,6 +39,16 @@
       "go": null,
       "trust_passed": false,
       "trust_result": "panic: distrusted root in runtime bundle: 86a1ecba089c4a8d3bbe2734c612ba341d813e043cf9e8a862cd5c57a36bbe6b"
+    },
+    {
+      "image": "goharbor/trivy-adapter-photon:v2.15.4",
+      "digest": "goharbor/trivy-adapter-photon@sha256:813ca81b4a4ea0f44f5fa81cca2645eeb58d4b1f6c66b428df9d506174bb71d9",
+      "go": {
+        "adapter": "1.26.7",
+        "trivy": "1.27.1"
+      },
+      "trust_passed": false,
+      "trust_result": "distrusted root: 86a1ecba089c4a8d3bbe2734c612ba341d813e043cf9e8a862cd5c57a36bbe6b"
     }
   ],
   "scans": {
@@ -65,6 +75,23 @@
         "GO-2022-0646",
         "GO-2026-5932"
       ]
+    },
+    "scanner-source-govulncheck": {
+      "reachable": [
+        "GO-2025-3540"
+      ],
+      "non_reachable": [
+        "GO-2026-5841",
+        "GO-2026-6603",
+        "GO-2026-6610",
+        "GO-2026-6611",
+        "GO-2026-6612",
+        "GO-2026-6617"
+      ]
+    },
+    "scanner-patched-govulncheck": {
+      "reachable": [],
+      "non_reachable": []
     }
   },
   "passed_tests": [
@@ -138,5 +165,17 @@
       "trust": "Verified 168 runtime certificates",
       "cert_startup": "non-root certificate initialization and post-init trust passed"
     }
-  ]
+  ],
+  "scanner_upgrade": {
+    "status": "Adapter dependencies updated; short race tests passed; local image build in progress. Not deployed.",
+    "adapter_upstream": "v0.39.1",
+    "official_alternative_tags_unavailable": [
+      "goharbor/harbor-scanner-trivy:0.39.1",
+      "goharbor/harbor-scanner-trivy:v0.39.1"
+    ],
+    "trivy_upstream_image": "aquasec/trivy:0.76.1@sha256:790fd66d1697395d8693d1acaa1ea702406a20f109b6fc7bac8db623eca6c06c",
+    "trivy_go": "1.27.3",
+    "trivy_trust": "Verified 118 runtime certificates",
+    "plan": "Reuse official Trivy binary; evaluate adapter separately. Refresh Photon trust using native packages."
+  }
 }
