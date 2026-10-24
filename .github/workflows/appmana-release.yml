@@ -138,6 +138,9 @@ jobs:
           docker run -d --name registry-canary --mount "type=bind,source=$PWD/tests/appmana/registry-canary.yml,target=/etc/registry/config.yml,readonly" --tmpfs /var/lib/registry:uid=10000,gid=10000,mode=0700,size=64m -p 127.0.0.1:5000:5000 "ghcr.io/appmana/harbor-registry:$RELEASE"
           trap 'docker rm -f registry-canary >/dev/null' EXIT
           python3 tests/appmana/registry_canary.py http://127.0.0.1:5000
+      - name: Scanner startup canary
+        if: matrix.component == 'trivy'
+        run: bash tests/appmana/scanner_canary.sh "ghcr.io/appmana/harbor-trivy:$RELEASE"
       - name: Publish verified image
         if: github.event_name == 'push' && github.ref == 'refs/heads/appmana-visibility-events'
         env:

@@ -9,7 +9,10 @@ COPY make/photon/trivy-adapter/appmana.go.mod ./go.mod
 COPY make/photon/trivy-adapter/appmana.go.sum ./go.sum
 RUN go mod download && go mod verify
 RUN go test -p 2 -short -race ./...
-RUN CGO_ENABLED=0 go build -p 2 -trimpath -ldflags='-s -w' -o /scanner-trivy ./cmd/scanner-trivy
+COPY --from=trivy /usr/local/bin/trivy /usr/local/bin/trivy
+RUN go test -p 2 -race -count=1 -tags=integration ./test/integration/api/...
+ARG GIT_COMMIT=unknown
+RUN CGO_ENABLED=0 go build -p 2 -trimpath -ldflags="-s -w -X main.version=0.39.1-appmana.1 -X main.commit=${GIT_COMMIT}" -o /scanner-trivy ./cmd/scanner-trivy
 COPY make/photon/common/verify-trust.go /tmp/verify-trust.go
 RUN CGO_ENABLED=0 go build -o /verify-trust /tmp/verify-trust.go
 
